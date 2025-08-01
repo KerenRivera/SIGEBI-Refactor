@@ -1,187 +1,88 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
-using SIGEBI.Application.Contracts;
-using SIGEBI.Application.Contracts.Repositories;
-using SIGEBI.Application.Contracts.Repositories.Reservations;
-using SIGEBI.Application.Contracts.Services;
+﻿using SIGEBI.Domain.Entities;
+using SIGEBI.Infrastructure.Interfaces;
 using SIGEBI.Application.DTOs;
-using SIGEBI.Application.Validations;
-using SIGEBI.Domain.Base;
-using SIGEBI.Domain.Entities.circulation;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SIGEBI.Application.Services
 {
-    public class ReservationService : IReservationService
+    public class ReservationService
     {
         private readonly IReservationRepository _reservationRepository;
-        private readonly IBookService _bookService;
-        private readonly object _logger;
+        private readonly IUserRepository _userRepository;
+        private readonly IBookRepository _bookRepository;
 
-        public ReservationService(IReservationRepository reservationRepository)
+        public ReservationService(
+            IReservationRepository reservationRepository,
+            IUserRepository userRepository,
+            IBookRepository bookRepository)
         {
             _reservationRepository = reservationRepository;
-        }
-        public async Task<OperationResult> CreateReservationAsync(CreateReservationRequestDto request)
-        {
-            if (request == null)
-            {
-                throw new ArgumentNullException(nameof(request), "Reservation request cannot be null.");
-            }
-
-            var validationContext = new ValidationContext(request);
-            var validationResults = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-            {
-                return OperationResult.Failure("Invalid reservation request.", validationResults);
-            }
-
-            var reservation = new Reservation //mapeo el dto a la entidad
-            {
-                BookId = request.BookId,
-                UserId = request.UserId,
-                CreatedBy = request.CreatedBy ?? "System",
-                StatusId = request.StatusId,
-                ReservationDate = request.ReservationDate,
-                CreatedAt = request.CreatedAt,
-                //UpdatedBy = request.UpdatedBy ?? string.Empty,
-                //DeletedBy = request.DeletedBy ?? string.Empty
-            };
-
-            var validationResult = ReservationValidator.ValidateReservation(reservation);
-            if (!validationResult.IsSuccess)
-                return validationResult;
-
-            return await _reservationRepository.AddAsync(reservation);
-        } //funciona
-
-        public async Task<OperationResult> DeleteReservationAsync(int id)
-        {
-            if (id <= 0)
-                throw new ArgumentOutOfRangeException(nameof(id), "Reservation ID must be greater than zero.");
-
-            var existing = await _reservationRepository.GetByIdAsync(id);
-            if (existing?.Data is not Reservation reservationToDelete)
-            {
-                return OperationResult.Failure("Reservation not found.");
-            }
-
-            reservationToDelete.IsDeleted = true;
-            reservationToDelete.DeletedAt = DateTime.UtcNow;
-            reservationToDelete.DeletedBy = "System";
-
-            return await _reservationRepository.UpdateAsync(reservationToDelete);
-        } //funciona
-
-        public async Task<OperationResult> GetAllReservationsAsync(Expression<Func<Reservation, bool>> filter = null)
-        {
-            var result = await _reservationRepository.GetAllAsync(filter);
-
-            if (!result.IsSuccess || result.Data == null)
-            {
-                return OperationResult.Failure("Error al recuperar las reservas: " + result.Message);
-            }
-
-            var reservations = result.Data as IEnumerable<Reservation>;
-
-            if (reservations == null)
-            {
-                return OperationResult.Failure("Tipo de datos inesperado al recuperar las reservas.");
-            }
-
-            var dtoList = new List<ReservationDto>();
-
-            foreach (var r in reservations)
-            {
-                try
-                {
-                    var dto = new ReservationDto
-                    {
-                        ReservationId = r.Id,
-                        UserName = r.User?.FullName ?? "Usuario desconocido",
-                        BookTitle = r.Book?.Title ?? "Título desconocido",
-                        ReservationDate = r.ReservationDate,
-                        ExpirationDate = r.ExpirationDate,
-                        StatusName = r.ReservationStatus?.StatusName ?? "Estado desconocido"
-                    };
-
-                    dtoList.Add(dto);
-                }
-                catch (Exception ex)
-                {
-                    _ = (ex, "Error al mapear la reserva ID: {Id}", r?.Id);
-                    continue;
-                }
-            }
-
-            return OperationResult.Success("Reservas obtenidas correctamente", dtoList);
+            _userRepository = userRepository;
+            _bookRepository = bookRepository;
         }
 
-        public Task<OperationResult> GetReservationByIdAsync(int id)
+        public IEnumerable<ReservationDto> GetAllReservations()
         {
-            if (id <= 0)
+            var reservations = _reservationRepository.GetAll();
+            return reservations.Select(r => new ReservationDto
             {
-                throw new ArgumentOutOfRangeException(nameof(id), "Reservation ID must be greater than zero.");
-            }
+                Id = r.Id,
+                BookId = r.BookId,
+                UserName = r.User.Name,
+                ReservationDate = r.ReservationDate,
+                Status = r.Status
+            });
+        }
 
-            return _reservationRepository.GetByIdAsync(id);
-        } //funciona
-
-        public async Task<OperationResult> UpdateReservationAsync(UpdateReservationRequestDto request) //chequear si funciona pero antes chequear el metodo en el repo
+        public ReservationDto GetReservationById(int id)
         {
-            if (request == null)
+            var r = _reservationRepository.GetById(id);
+            if (r == null) return null;
+
+            return new ReservationDto
             {
-                throw new ArgumentNullException(nameof(request), "Reservation request cannot be null.");
-            }
-
-            var validationContext = new ValidationContext(request);
-            var validationResults = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-            {
-                return OperationResult.Failure("Invalid reservation request.", validationResults);
-            }
-
-            // buscamos la reserva existente
-
-            var Result = await _reservationRepository.GetByIdAsync(request.ReservationId);
-
-            if (!Result.IsSuccess || Result.Data is not Reservation existingReservation)
-            {
-                return OperationResult.Failure("Reservation not found.");
-            }
-
-            //verificamos que el libro este disponible (en este caso siempre lo estara)
-
-            bool isAvailable = await _bookService.IsBookAvailableAsync(request.BookId); // verificar
-
-            if (isAvailable)
-            {
-                return OperationResult.Failure("The book is not available for reservation.");
-            }
-
-            var reservation = (Reservation)Result.Data;
-
-            reservation.BookId = request.BookId;
-
-            existingReservation.UpdatedAt = DateTime.UtcNow;
-
-            var validationResult = ReservationValidator.ValidateReservation(reservation);
-            if (!validationResult.IsSuccess)
-            {
-                return validationResult;
-            }
-            return await _reservationRepository.UpdateAsync(reservation);
-
-            //var status = await _reservationStatusesRepository.GetStatusNameByIdAsync(existingReservation.StatusId);
-
-            var response = new ReservationUpdateResponseDto
-            {
-                ReservationId = existingReservation.Id,
-                BookId = existingReservation.BookId,
-                StatusName = existingReservation.ReservationStatus?.StatusName ?? "Unknown", 
-                UpdatedAt = (DateTime)existingReservation.UpdatedAt
+                Id = r.Id,
+                BookId = r.BookId,
+                UserName = r.User.Name,
+                ReservationDate = r.ReservationDate,
+                Status = r.Status
             };
-            return OperationResult.Success("Reservation updated successfully.", response);
+        }
+
+        public void AddReservation(ReservationDto dto)
+        {
+            var user = _userRepository.GetAll().FirstOrDefault(u => u.Name == dto.UserName);
+            var book = _bookRepository.GetById(dto.BookId);
+
+            if (user == null || book == null)
+                throw new System.Exception("The user or Book does not exists.");
+
+            var reservation = new Reservation
+            {
+                BookId = dto.BookId,
+                UserId = user.Id,
+                ReservationDate = dto.ReservationDate,
+                //set default status to true
+                Status = true 
+            };
+
+            _reservationRepository.Add(reservation);
+        }
+
+        public void UpdateReservation(ReservationDto dto)
+        {
+            var reservation = _reservationRepository.GetById(dto.Id);
+            if (reservation == null) return;
+
+            reservation.Status = dto.Status;
+            reservation.ReservationDate = dto.ReservationDate;
+            _reservationRepository.Update(reservation);
+        }
+
+        public void DeleteReservation(int id)
+        {
+            _reservationRepository.Delete(id);
         }
     }
 }
-

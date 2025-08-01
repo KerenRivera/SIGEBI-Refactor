@@ -1,162 +1,64 @@
-﻿using System.Diagnostics.Eventing.Reader;
-using System.Linq.Expressions;
-using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SIGEBI.api.Services;
+﻿using Microsoft.AspNetCore.Mvc;
+using SIGEBI.Application.Services;
 using SIGEBI.Application.DTOs;
-using SIGEBI.Domain.Entities.circulation;
-using SIGEBI.Persistence.Context;
-
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using System.Collections.Generic;
 
 namespace SIGEBI.WebApi.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class ReservationController : ControllerBase
     {
-        private readonly ReservationApiService _reservationApiService; // Injecting the ReservationApiService
-        private readonly SIGEBIContext _context;
+        private readonly ReservationService _reservationService;
 
-        public ReservationController(ReservationApiService reservationApiService, SIGEBIContext context)
+        public ReservationController(ReservationService reservationService)
         {
-            _reservationApiService = reservationApiService;
-            _context = context;
+            _reservationService = reservationService;
         }
 
         [HttpGet]
-        //[ProducesResponseType(typeof(List<ReservationDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllReservations() //probar
+        public ActionResult<IEnumerable<ReservationDto>> GetAll()
         {
-            try
-            {
-                Expression<Func<Reservation, bool>> filter = null;
-
-                var result = await _reservationApiService.GetAllReservationsAsync(filter);
-
-                if (!result.IsSuccess)
-                    return BadRequest(new
-                    {
-                        Message = result.Message,
-                        Success = result.IsSuccess
-                    });
-                return Ok(result.Data);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    Message = ex.Message,
-                    Success = false
-                });
-            }
+            var reservations = _reservationService.GetAllReservations();
+            return Ok(reservations);
         }
 
-        // GET api/<ReservationController>/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetReservationById(int id)
+        public ActionResult<ReservationDto> GetById(int id)
         {
-            try
-            {
-                var result = await _reservationApiService.GetReservationByIdAsync(id);
-
-                if (!result.IsSuccess)
-                    return NotFound(new
-                    {
-                        result.Message,
-                        result.IsSuccess
-                    });
-                return Ok(result);
-
-            }
-            catch (InvalidOperationException ex)
-            {
-                return StatusCode(500, new
-                {
-                    Message = ex.Message,
-                    Success = false
-                });
-            }
+            var reservation = _reservationService.GetReservationById(id);
+            if (reservation == null) return NotFound();
+            return Ok(reservation);
         }
 
-        //POST api/<ReservationController>
         [HttpPost]
-        public async Task<IActionResult> CreateReservation([FromBody] CreateReservationRequestDto requestDto) //probar
+        public IActionResult Create([FromBody] ReservationDto dto)
         {
             try
             {
-                var createdReservation = await _reservationApiService.CreateReservationAsync(requestDto);
-                //return CreatedAtAction(nameof(GetById), new { id = createdReservation.Data }, createdReservation.Data); 
-
-                if (!createdReservation.IsSuccess)
-                    return BadRequest(new
-                    {
-                        createdReservation.Message,
-                        createdReservation.IsSuccess
-                    });
-                return Ok(createdReservation);
+                _reservationService.AddReservation(dto);
+                return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
             }
-            catch (InvalidOperationException ex)
+            catch (System.Exception ex)
             {
-                return StatusCode(500, new
-                {
-                    Message = ex.Message,
-                    Success = false
-                });
+                return BadRequest(ex.Message);
             }
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateReservation([FromBody] UpdateReservationRequestDto requestDto)
+        [HttpPut("{id}")]
+        public IActionResult Update(int id, [FromBody] ReservationDto dto)
         {
-            try
-            {
-                var updatedReservation = await _reservationApiService.UpdateReservationAsync(requestDto);
+            if (id != dto.Id) return BadRequest();
 
-                if (!updatedReservation.IsSuccess)
-                return BadRequest(new
-                {
-                    updatedReservation.Message,
-                    updatedReservation.IsSuccess
-                });
-                return Ok(updatedReservation);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return StatusCode(500, new
-                {
-                    Message = ex.Message,
-                    Success = false
-                });
-            }
+            _reservationService.UpdateReservation(dto);
+            return NoContent();
         }
 
-        // DELETE api/<ReservationController>/5
         [HttpDelete("{id}")]
-        public async Task< IActionResult> DeleteReservation(int id)
+        public IActionResult Delete(int id)
         {
-            try
-            {
-               var deleted = await _reservationApiService.DeleteReservationAsync(id);
-
-                if (!deleted.IsSuccess)
-                    return NotFound(new
-                    {
-                        deleted.Message,
-                        deleted.IsSuccess
-                    });
-
-                return Ok(deleted);
-
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(ex.Message); // Return 404 
-
-            }
+            _reservationService.DeleteReservation(id);
+            return NoContent();
         }
     }
 }
-
