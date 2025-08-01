@@ -18,15 +18,19 @@ namespace SIGEBI.Web.Controllers
                 using (var client = new HttpClient())
                 {
 
-                    client.BaseAddress = new Uri("https://localhost:7166/api");
+                    client.BaseAddress = new Uri("https://localhost:7166/api/");
 
-                    var response = await client.GetAsync("/Book");
+                    var response = await client.GetAsync("Book");
                     Console.WriteLine(response.StatusCode);
 
                     if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
                     { 
                         var responseString = await response.Content.ReadAsStringAsync();
-                        books = JsonSerializer.Deserialize<List<BookModel>>(responseString);
+
+                        books = JsonSerializer.Deserialize<List<BookModel>>(responseString, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
                     }
                 }               
             }
@@ -40,9 +44,39 @@ namespace SIGEBI.Web.Controllers
         }
 
         // GET: BookController/Details/5
-        public ActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            return View();
+            BookModel book = null;
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7166/api/");
+
+                    var response = await client.GetAsync($"Book/{id}"); //agregar validacion de id
+                    Console.WriteLine(response.StatusCode);
+
+                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+
+                        book = JsonSerializer.Deserialize<BookModel>(responseString, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            { 
+                Console.WriteLine(ex.Message);
+            }
+
+            if (book == null)
+            {
+                return NotFound();
+            }
+            return View(book);
         }
 
         // GET: BookController/Create
@@ -67,9 +101,39 @@ namespace SIGEBI.Web.Controllers
         }
 
         // GET: BookController/Edit/5
-        public ActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            return View();
+            BookModel book = null;
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7166/api/");
+
+                    var response = await client.GetAsync($"Book/{id}"); //agregar validacion de id
+                    Console.WriteLine(response.StatusCode);
+
+                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+
+                        book = JsonSerializer.Deserialize<BookModel>(responseString, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            if (book == null)
+            {
+                return NotFound();
+            }
+            return View(book);
         }
 
         // POST: BookController/Edit/5

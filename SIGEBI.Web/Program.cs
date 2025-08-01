@@ -9,15 +9,7 @@ builder.Services.AddCors(options =>
         builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
-//builder.WebHost.ConfigureKestrel(options =>
-//{
-//    // Set the maximum request body size to 100 MB
-//    options.ListenAnyIP(5294); //HTTP
-//    options.ListenAnyIP(7166, listenOptions =>
-//    {
-//        listenOptions.UseHttps(); //HTTPS
-//    });
-//});
+
 var app = builder.Build();
 
 
