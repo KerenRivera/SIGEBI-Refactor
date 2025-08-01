@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIGEBI.Web", "SIGEBI.Web\SIGEBI.Web.csproj", "{E2B1D573-5E19-42FB-BE25-0AD9247E3304}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "API", "API", "{EB99875A-8F94-4066-972B-DBB6B684704D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,6 +92,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{560AB346-E6EF-4992-A34C-CC7405BDDBA2} = {EB99875A-8F94-4066-972B-DBB6B684704D}
 		{E2B1D573-5E19-42FB-BE25-0AD9247E3304} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
