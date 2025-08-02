@@ -139,16 +139,34 @@ namespace SIGEBI.Web.Controllers
         // POST: BookController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public async Task<IActionResult> Edit(BookModel model)
         {
+            BookModel book = null;
             try
             {
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7166/api/");
+
+                    var response = await client.PutAsJsonAsync($"Book/{model.id}", model); //agregar validacion de id
+
+                    if(response.IsSuccessStatusCode)
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        book = JsonSerializer.Deserialize<BookModel>(responseString, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                Console.WriteLine(ex.Message);
             }
+            return View(book);
+
         }
 
         // GET: BookController/Delete/5

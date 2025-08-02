@@ -39,10 +39,9 @@ namespace SIGEBI.WebApi.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] UsersDto dto)
+        public IActionResult Update(int id, [FromBody] UpdateUserDto dto)
         {
-            if (id != dto.Id) return BadRequest();
-            _userService.UpdateUser(dto);
+            _userService.UpdateUser(id, dto.Name);
             return NoContent();
         }
 

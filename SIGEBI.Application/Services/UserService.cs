@@ -46,12 +46,12 @@ namespace SIGEBI.Application.Services
             _userRepository.Add(user);
         }
 
-        public void UpdateUser(UsersDto dto)
+        public void UpdateUser(int id, string name)
         {
-            var user = _userRepository.GetById(dto.Id);
+            var user = _userRepository.GetById(id);
             if (user == null) return;
 
-            user.Name = dto.Name;
+            user.Name = name;
             _userRepository.Update(user);
         }
 

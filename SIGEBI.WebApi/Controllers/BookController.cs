@@ -19,9 +19,7 @@ namespace SIGEBI.WebApi.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<Book>> GetAllBooks()
         {
-            Console.WriteLine("Llamando a GetAllBooks");
             var books = _bookService.GetAllBooks();
-            Console.WriteLine($"Libros obtenidos: {books.Count()}");
             return Ok(books);
         }
 
@@ -47,9 +45,12 @@ namespace SIGEBI.WebApi.Controllers
         public IActionResult UpdateBook(int id, [FromBody] Book book)
         {
             if (id != book.Id)
-                return BadRequest();
+                return BadRequest("The book id do not match the body.");
 
-            _bookService.UpdateBook(book);
+            var updated = _bookService.UpdateBook(book);
+            if (!updated)
+                return NotFound("The book does not exist.");
+
             return NoContent();
         }
 
