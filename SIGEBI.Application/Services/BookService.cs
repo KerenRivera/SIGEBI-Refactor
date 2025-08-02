@@ -1,10 +1,11 @@
-﻿using SIGEBI.Domain.Entities;
+﻿using SIGEBI.Application.Interfaces;
+using SIGEBI.Domain.Entities;
 using SIGEBI.Infrastructure.Interfaces;
 
 
 namespace SIGEBI.Application.Services
 {
-    public class BookService
+    public class BookService : IBookService
     {
         private readonly IBookRepository _bookRepository;
 
@@ -36,7 +37,7 @@ namespace SIGEBI.Application.Services
         {
             var existingBook = _bookRepository.GetById(book.Id);
             if (existingBook == null)
-                return false; // El libro no existe, no se puede actualizar
+                return false; 
 
             existingBook.Title = book.Title;
             existingBook.Author = book.Author;
@@ -45,9 +46,16 @@ namespace SIGEBI.Application.Services
             return true;
         }
 
-        public void DeleteBook(int id)
+        public bool DeleteBook(int id)
         {
-            _bookRepository.Delete(id);
+            var book = _bookRepository.GetById(id);
+            if (book == null)
+                return false;
+
+            _bookRepository.Delete(id); // aqui se llama al metodo de eliminar del repositorio.
+            return true; // devolvemos true si se elimino correctamente
+
+            //lo hice de esta manera para evitar modificar RepositoryBase.
         }
     }
 }

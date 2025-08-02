@@ -3,6 +3,7 @@ using SIGEBI.Infrastructure.Persistence.Repositories;
 using SIGEBI.Infrastructure.Persistence.Context;
 using SIGEBI.Application.Services;
 using SIGEBI.Infrastructure.Interfaces;
+using SIGEBI.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +18,8 @@ builder.Services.AddDbContext<SIGEBIContext>(options =>
 
 // Registering repositories and services
 builder.Services.AddScoped<IBookRepository, BookRepository>();
-builder.Services.AddScoped<BookService>();
+builder.Services.AddScoped<IBookService, BookService>();
+//builder.Services.AddScoped<BookService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();

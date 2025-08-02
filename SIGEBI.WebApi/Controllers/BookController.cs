@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SIGEBI.Application.Services;
+using SIGEBI.Application.Interfaces; //Cambiamos Services por Interfaces
 using SIGEBI.Domain.Entities;
 using System.Collections.Generic;
 
@@ -9,9 +9,9 @@ namespace SIGEBI.WebApi.Controllers
     [Route("api/[controller]")]
     public class BookController : ControllerBase
     {
-        private readonly BookService _bookService;
+        private readonly IBookService _bookService; //Dependencia abstracta para el servicio de libros
 
-        public BookController(BookService bookService)
+        public BookController(IBookService bookService) 
         {
             _bookService = bookService;
         }
