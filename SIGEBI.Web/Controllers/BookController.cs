@@ -1,81 +1,32 @@
 ﻿using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SIGEBI.Web.Models;
+using SIGEBI.Web.Repositories;
 
 namespace SIGEBI.Web.Controllers
 {
     public class BookController : Controller
     {
+        private readonly IBookRepository _bookRepository;
+
+        public BookController(IBookRepository bookRepository) //implementacion de DI
+        {
+            _bookRepository = bookRepository;
+        }
         // GET: BookController
         public async Task<IActionResult> Index()
         {
-
-            List<BookModel> books = new();
-
-            try
-            {
-                using (var client = new HttpClient())
-                {
-
-                    client.BaseAddress = new Uri("https://localhost:7166/api/");
-
-                    var response = await client.GetAsync("Book");
-                    Console.WriteLine(response.StatusCode);
-
-                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
-                    { 
-                        var responseString = await response.Content.ReadAsStringAsync();
-
-                        books = JsonSerializer.Deserialize<List<BookModel>>(responseString, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-                    }
-                }               
-            }
-            catch (Exception ex)
-            {
-                // Log the exception
-                Console.WriteLine(ex.Message);
-
-            }
+            var books = await _bookRepository.GetAllBooksAsync();
             return View(books);
+
         }
 
         // GET: BookController/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            BookModel book = null;
-            try
-            {
-                using (var client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri("https://localhost:7166/api/");
-
-                    var response = await client.GetAsync($"Book/{id}"); //agregar validacion de id
-                    Console.WriteLine(response.StatusCode);
-
-                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
-                    {
-                        var responseString = await response.Content.ReadAsStringAsync();
-
-                        book = JsonSerializer.Deserialize<BookModel>(responseString, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-                    }
-                }
-            }
-            catch (Exception ex)
-            { 
-                Console.WriteLine(ex.Message);
-            }
-
-            if (book == null)
-            {
-                return NotFound();
-            }
+            var book = await _bookRepository.GetBookByIdAsync(id);
             return View(book);
         }
 
@@ -88,106 +39,81 @@ namespace SIGEBI.Web.Controllers
         // POST: BookController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public async Task<IActionResult> Create(BookModel book)
         {
-            try
+            var success = await _bookRepository.CreateAsync(book);
+            if (success)
             {
                 return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                return View();
-            }
+
+            return View(book);
         }
 
         // GET: BookController/Edit/5
+        // SRP, RP, DIP
         public async Task<IActionResult> Edit(int id)
         {
-            BookModel book = null;
-            try
-            {
-                using (var client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri("https://localhost:7166/api/");
-
-                    var response = await client.GetAsync($"Book/{id}"); //agregar validacion de id
-                    Console.WriteLine(response.StatusCode);
-
-                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
-                    {
-                        var responseString = await response.Content.ReadAsStringAsync();
-
-                        book = JsonSerializer.Deserialize<BookModel>(responseString, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+           var book = await _bookRepository.GetBookByIdAsync(id);
 
             if (book == null)
             {
                 return NotFound();
             }
+
             return View(book);
         }
 
         // POST: BookController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+
+        // aaaaaaaah. que bonito se ve ahora
         public async Task<IActionResult> Edit(BookModel model)
         {
-            BookModel book = null;
-            try
+            var book = await _bookRepository.GetBookByIdAsync(model.id);
+            if (book == null)
             {
-                using (var client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri("https://localhost:7166/api/");
+                return NotFound();
+            }
 
-                    var response = await client.PutAsJsonAsync($"Book/{model.id}", model); //agregar validacion de id
-
-                    if(response.IsSuccessStatusCode)
-                    {
-                        var responseString = await response.Content.ReadAsStringAsync();
-                        book = JsonSerializer.Deserialize<BookModel>(responseString, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-                    }
-                }
+            var success = await _bookRepository.UpdateAsync(model);
+            if (success)
+            {
                 return RedirectToAction(nameof(Index));
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            return View(book);
+
+            return View(model);
 
         }
 
         // GET: BookController/Delete/5
-        public ActionResult Delete(int id)
+        public async Task<ActionResult> Delete(int id)
         {
-            return View();
+            var book = await _bookRepository.GetBookByIdAsync(id);
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            return View(book);
         }
 
         // POST: BookController/Delete/5
-        [HttpPost]
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            try
+            var success = await _bookRepository.DeleteAsync(id);
+            if (success)
             {
                 return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                return View();
-            }
+
+            return View();
+
         }
+
+        // de esta forma el controller solo maneja http (SRP)
     }
 }
