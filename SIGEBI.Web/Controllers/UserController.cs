@@ -82,16 +82,27 @@ namespace SIGEBI.Web.Controllers
         // POST: UserController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public async Task<IActionResult> Create(UserCreateAndUpdateModel model)
         {
             try
             {
-                return RedirectToAction(nameof(Index));
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7166/api/");
+
+                    var response = await client.PostAsJsonAsync("User", model);
+
+                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
+                    {
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
             }
-            catch
+            catch(Exception ex)
             {
-                return View();
+                Console.WriteLine(ex.Message);              
             }
+            return View(model);
         }
 
         // GET: UserController/Edit/5
