@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Reflection;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SIGEBI.Web.Models;
@@ -114,22 +115,62 @@ namespace SIGEBI.Web.Controllers
         // POST: UserController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public async Task<IActionResult> Edit(int id, UserCreateAndUpdateModel model)
         {
             try
             {
-                return RedirectToAction(nameof(Index));
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7166/api/");
+
+                    var response = await client.PutAsJsonAsync($"User/{id}", model);
+
+                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
+                    {
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                Console.WriteLine(ex.Message);
             }
+            ViewBag.UserId = id;
+            return View(model);
         }
 
         // GET: UserController/Delete/5
-        public ActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            return View();
+            UserModel user = null;
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7166/api/");
+
+                    var response = await client.GetAsync($"User/{id}");
+
+                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        
+                        user = JsonSerializer.Deserialize<UserModel>(responseString, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return View(user);
         }
 
         // POST: UserController/Delete/5
