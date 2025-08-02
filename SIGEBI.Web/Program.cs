@@ -3,8 +3,10 @@ using SIGEBI.Web.Repositories;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddHttpClient();
-builder.Services.AddScoped<IBookRepository, ApiBookRepository>(); //(DI)
+builder.Services.AddHttpClient<IBookRepository, ApiBookRepository>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7166/api/");
+});
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddCors(options =>
