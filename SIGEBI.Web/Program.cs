@@ -2,10 +2,13 @@ using SIGEBI.Web.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"];
+
 // Add services to the container.
+
 builder.Services.AddHttpClient<IBookRepository, ApiBookRepository>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7166/api/");
+    client.BaseAddress = new Uri(apiBaseUrl);
 });
 
 builder.Services.AddControllersWithViews();

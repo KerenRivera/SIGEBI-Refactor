@@ -29,6 +29,7 @@ namespace SIGEBI.WebApi.Controllers
             var user = _userService.GetUserById(id);
             if (user == null) return NotFound();
             return Ok(user);
+            // This method retrieves a user by ID and returns it if found, otherwise returns NotFound.
         }
 
         [HttpPost]
@@ -36,6 +37,7 @@ namespace SIGEBI.WebApi.Controllers
         {
             _userService.AddUser(dto);
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+            // This method creates a new user and returns the created user with a 201 status code.
         }
 
         [HttpPut("{id}")]
@@ -43,6 +45,7 @@ namespace SIGEBI.WebApi.Controllers
         {
             _userService.UpdateUser(id, dto.Name);
             return NoContent();
+            // This method updates an existing user by ID and returns NoContent if successful.
         }
 
         [HttpDelete("{id}")]
@@ -50,6 +53,7 @@ namespace SIGEBI.WebApi.Controllers
         {
             _userService.DeleteUser(id);
             return NoContent();
+            // This method deletes a user by ID and returns NoContent if successful.
         }
     }
 }

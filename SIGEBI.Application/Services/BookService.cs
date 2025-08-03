@@ -28,11 +28,7 @@ namespace SIGEBI.Application.Services
         {
             _bookRepository.Add(book);
         }
-        // modificando para que verifique que el libro existe antes de actualizar
-        //public void UpdateBook(Book book)
-        //{
-        //    _bookRepository.Update(book);
-        //}
+
         public bool UpdateBook(Book book)
         {
             var existingBook = _bookRepository.GetById(book.Id);

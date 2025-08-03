@@ -30,6 +30,7 @@ namespace SIGEBI.Infrastructure.Persistence.Repositories
                 .Include(r => r.Book)
                 .Include(r => r.User)
                 .FirstOrDefault(r => r.Id == id);
+            // This will return the reservation with the specified ID, including related book and user information.
         }
 
         public void Add(Reservation reservation)
