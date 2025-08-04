@@ -69,17 +69,17 @@ namespace SIGEBI.Web.Repositories
         {
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"{Endpoint}/{user.id}", user);
+                var response = await _httpClient.PutAsJsonAsync($"{Endpoint}/{id}", user);
                 if (response.IsSuccessStatusCode)
                 {
                     return true;
                 }
-                _logger.LogWarning("Failed to update user with ID {Id}. Status code: {StatusCode}", user.id, response.StatusCode);
+                _logger.LogWarning("Failed to update user with ID {Id}. Status code: {StatusCode}", id, response.StatusCode);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user with ID {Id}.", user.id);
+                _logger.LogError(ex, "Error updating user with ID {Id}.", id);
                 return false;
             }
 
