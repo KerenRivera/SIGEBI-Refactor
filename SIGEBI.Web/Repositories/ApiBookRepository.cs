@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json;
+using SIGEBI.Web.Contracts;
 using SIGEBI.Web.Models;
 
 namespace SIGEBI.Web.Repositories
@@ -17,7 +18,7 @@ namespace SIGEBI.Web.Repositories
             _logger = logger;
         }
 
-        public async Task<List<BookModel>> GetAllBooksAsync()
+        public async Task<List<BookModel>> GetAllBooksAsync() 
         {
             try
             {
@@ -32,7 +33,7 @@ namespace SIGEBI.Web.Repositories
             }
         }
 
-        public async Task<BookModel> GetBookByIdAsync(int id)
+        public async Task<BookModel> GetBookByIdAsync(int id) 
         {
             try
             {
@@ -53,7 +54,7 @@ namespace SIGEBI.Web.Repositories
             
         }
 
-        public async Task<bool> CreateAsync(BookModel book)
+        public async Task<bool> CreateAsync(BookModel book) 
         {
             try
             {
@@ -73,7 +74,7 @@ namespace SIGEBI.Web.Repositories
            
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id) 
         {
             try
             {

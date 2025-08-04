@@ -48,8 +48,8 @@ namespace SIGEBI.Application.Services
             if (book == null)
                 return false;
 
-            _bookRepository.Delete(id); // aqui se llama al metodo de eliminar del repositorio.
-            return true; // devolvemos true si se elimino correctamente
+            _bookRepository.Delete(id); 
+            return true;
 
             //lo hice de esta manera para evitar modificar RepositoryBase.
         }

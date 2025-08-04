@@ -2,76 +2,56 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SIGEBI.Web.Contracts;
 using SIGEBI.Web.Models;
 
 namespace SIGEBI.Web.Controllers
 {
     public class UserController : Controller
     {
+        private readonly IUserRepository _userRepository;
+        private readonly ILogger<UserController> _logger;
+
+        public UserController(IUserRepository userRepository, ILogger<UserController> logger)
+        {
+            _userRepository = userRepository;
+            _logger = logger;
+        }
+
         // GET: UserController
         public async Task<IActionResult> Index()
         {
-            List<UserModel> users = new();
             try
             {
-                using (var client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri("https://localhost:7166/api/");
-
-                    var response = await client.GetAsync("User");
-                    Console.WriteLine(response.StatusCode);
-
-                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
-                    {
-                        var responseString = await response.Content.ReadAsStringAsync();
-                        users = JsonSerializer.Deserialize<List<UserModel>>(responseString, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-                    }
-                }
+                var users = await _userRepository.GetAllUsersAsync();
+                return View(users);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-            }
-            return View(users);
+                _logger.LogError(ex, "Error fetching users.");
+                return View(new List<UserModel>());
+            }         
         }
 
         // GET: UserController/Details/5
         public async Task<ActionResult> Details(int id)
         {
-            UserModel user = null;
+
             try
             {
-                using (var client = new HttpClient())
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
                 {
-                    client.BaseAddress = new Uri("https://localhost:7166/api/");
-
-                    var response = await client.GetAsync($"User/{id}");
-                    Console.WriteLine(response.StatusCode);
-
-                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
-                    {
-                        var responseString = await response.Content.ReadAsStringAsync();
-
-                        user = JsonSerializer.Deserialize<UserModel>(responseString, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-                    }
+                    return NotFound();
                 }
+                return View(user);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-            }
-
-            if (user == null)
-            {
+                _logger.LogError(ex, "Error fetching user details for ID {Id}.", id);
                 return NotFound();
             }
-            return View(user);
+
         }
 
         // GET: UserController/Create
@@ -87,103 +67,89 @@ namespace SIGEBI.Web.Controllers
         {
             try
             {
-                using (var client = new HttpClient())
+                if(!ModelState.IsValid)
                 {
-                    client.BaseAddress = new Uri("https://localhost:7166/api/");
-
-                    var response = await client.PostAsJsonAsync("User", model);
-
-                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
-                    {
-                        return RedirectToAction(nameof(Index));
-                    }
+                    return View(model);
                 }
+                await _userRepository.CreateAsync(model);
+                return RedirectToAction(nameof(Index));
             }
             catch(Exception ex)
             {
-                Console.WriteLine(ex.Message);              
+                _logger.LogError(ex, "Error creating user.");
             }
             return View(model);
         }
 
         // GET: UserController/Edit/5
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
+        //public ActionResult Edit(int id)
+        //{
+        //    return View();
+        //}
 
         // POST: UserController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, UserCreateAndUpdateModel model)
         {
+            if (!ModelState.IsValid)
+                return View(model);
+
             try
             {
-                using (var client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri("https://localhost:7166/api/");
+                var existingUser = await _userRepository.GetUserByIdAsync(id);
+                if (existingUser == null)
+                    return NotFound();
+                
+                await _userRepository.UpdateAsync(id, model);
+                return RedirectToAction(nameof(Index));
 
-                    var response = await client.PutAsJsonAsync($"User/{id}", model);
-
-                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
-                    {
-                        return RedirectToAction(nameof(Index));
-                    }
-                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError(ex, "Error editing user with ID {Id}.", id);
             }
-            ViewBag.UserId = id;
             return View(model);
         }
+        //revisar
 
         // GET: UserController/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
-            UserModel user = null;
+
             try
             {
-                using (var client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri("https://localhost:7166/api/");
-
-                    var response = await client.GetAsync($"User/{id}");
-
-                    if (response.IsSuccessStatusCode) // devuelve un http 200 OK 
-                    {
-                        var responseString = await response.Content.ReadAsStringAsync();
-                        
-                        user = JsonSerializer.Deserialize<UserModel>(responseString, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-                    }
-                }
+                var user = await _userRepository.GetUserByIdAsync(id);
+                return user == null ? NotFound() : View(user);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-            }
-            if (user == null)
-            {
+                _logger.LogError(ex, "Error fetching user for delete with ID {Id}.", id);
                 return NotFound();
             }
-            return View(user);
+
         }
 
         // POST: UserController/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try
             {
-                return RedirectToAction(nameof(Index));
+                var success = await _userRepository.DeleteAsync(id);
+                if (success)
+                {
+                    _logger.LogInformation("User with ID {Id} deleted successfully.", id);
+                    return RedirectToAction(nameof(Index));
+                }
+
+                ModelState.AddModelError("", "The user could not be deleted.");
+                return View();
             }
             catch
             {
+                _logger.LogError("Error deleting user with ID {Id}.", id);
                 return View();
             }
         }

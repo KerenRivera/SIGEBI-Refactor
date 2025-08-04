@@ -3,10 +3,11 @@ using SIGEBI.Infrastructure.Interfaces;
 using SIGEBI.Application.DTOs;
 using System.Collections.Generic;
 using System.Linq;
+using SIGEBI.Application.Interfaces;
 
 namespace SIGEBI.Application.Services
 {
-    public class UserService
+    public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
 
@@ -15,7 +16,7 @@ namespace SIGEBI.Application.Services
             _userRepository = userRepository;
         }
 
-        public IEnumerable<UsersDto> GetAllUsers()
+        public IEnumerable<UsersDto> GetAllUsers() 
         {
             return _userRepository.GetAll()
                 .Select(user => new UsersDto

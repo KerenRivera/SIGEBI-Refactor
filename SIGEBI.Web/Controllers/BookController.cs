@@ -2,8 +2,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SIGEBI.Web.Contracts;
 using SIGEBI.Web.Models;
-using SIGEBI.Web.Repositories;
 
 namespace SIGEBI.Web.Controllers
 {

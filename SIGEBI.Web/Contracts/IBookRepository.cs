@@ -1,10 +1,6 @@
 ﻿using SIGEBI.Web.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace SIGEBI.Web.Repositories
+namespace SIGEBI.Web.Contracts
 {
-    //la responsabilidad de este repositorio es acceder a los datos de los libros
     public interface IBookRepository 
     {
         Task<List<BookModel>> GetAllBooksAsync();
